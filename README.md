@@ -190,3 +190,4 @@ docker run --rm -p 8080:8080 \
 - **1800+ deploys on Railway and counting** [Link to template on Railway](https://railway.com/deploy/clawdbot-railway-template)
 
 ![Railway template deploy count](assets/railway-deploys.jpg)
+# Last updated: 2026-03-12T09:40:20Z
