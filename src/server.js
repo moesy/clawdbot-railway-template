@@ -1387,7 +1387,8 @@ voiceProxy.on("error", (err, _req, res) => {
     }
   } catch { /* ignore */ }
 });
-app.use(["/hooks/voice", "/voice/stream"], (req, res) => {
+// Use app.all with regex to preserve the full request path (app.use strips prefix).
+app.all(/^\/(hooks\/voice|voice\/stream)(\/.*)?$/, (req, res) => {
   voiceProxy.web(req, res);
 });
 
