@@ -1365,6 +1365,32 @@ proxy.on("proxyReqWs", (_proxyReq, req) => {
   attachGatewayAuthHeader(req);
 });
 
+// Voice-call plugin runs its own webhook server on a separate port (default 3335).
+// Route Twilio callbacks and media-stream WebSocket traffic directly to that port.
+// Port is configurable via OPENCLAW_VOICE_WEBHOOK_PORT env var.
+const VOICE_WEBHOOK_PORT = Number.parseInt(
+  process.env.OPENCLAW_VOICE_WEBHOOK_PORT ?? "3335",
+  10,
+);
+const VOICE_WEBHOOK_TARGET = `http://127.0.0.1:${VOICE_WEBHOOK_PORT}`;
+const voiceProxy = httpProxy.createProxyServer({
+  target: VOICE_WEBHOOK_TARGET,
+  ws: true,
+  xfwd: true,
+});
+voiceProxy.on("error", (err, _req, res) => {
+  console.error("[voice-proxy]", err);
+  try {
+    if (res && typeof res.writeHead === "function" && !res.headersSent) {
+      res.writeHead(502, { "Content-Type": "text/plain" });
+      res.end("Voice webhook unavailable\n");
+    }
+  } catch { /* ignore */ }
+});
+app.use(["/hooks/voice", "/voice/stream"], (req, res) => {
+  voiceProxy.web(req, res);
+});
+
 app.use(requireDashboardAuth, async (req, res) => {
   // If not configured, force users to /setup for any non-setup routes.
   if (!isConfigured() && !req.path.startsWith("/setup")) {
@@ -1463,6 +1489,13 @@ server.on("upgrade", async (req, socket, head) => {
   // Note: browsers cannot attach arbitrary HTTP headers (including Authorization: Basic)
   // in WebSocket handshakes. Do not enforce dashboard Basic auth at the upgrade layer.
   // The gateway authenticates at the protocol layer and we inject the gateway token below.
+
+  // Route voice media-stream WebSocket upgrades to the voice-call plugin's server.
+  const url = req.url ?? "";
+  if (url.startsWith("/voice/stream") || url.startsWith("/hooks/voice")) {
+    voiceProxy.ws(req, socket, head, { target: VOICE_WEBHOOK_TARGET });
+    return;
+  }
 
   if (!isConfigured()) {
     socket.destroy();
