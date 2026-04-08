@@ -24,5 +24,7 @@ jobs:
           file: ./Dockerfile
           push: false
           tags: openclaw-railway-template:ci
+          build-args: |
+            OPENCLAW_VERSION=v2026.4.5
           cache-from: type=gha
           cache-to: type=gha,mode=max
