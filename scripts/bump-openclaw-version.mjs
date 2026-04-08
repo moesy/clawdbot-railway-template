@@ -23,25 +23,25 @@ async function gh(path) {
   return res.json();
 }
 
-function readCurrentTag(dockerfile) {
-  const m = dockerfile.match(/\nARG OPENCLAW_GIT_REF=([^\n]+)\n/);
+function readCurrentTag(config) {
+  const m = config.match(/\nOPENCLAW_VERSION = "([^\n"]+)"\n/);
   return m ? m[1].trim() : null;
 }
 
-function replaceTag(dockerfile, next) {
-  const re = /\nARG OPENCLAW_GIT_REF=([^\n]+)\n/;
-  if (!re.test(dockerfile)) throw new Error("Could not find OPENCLAW_GIT_REF line");
-  return dockerfile.replace(re, `\nARG OPENCLAW_GIT_REF=${next}\n`);
+function replaceTag(config, next) {
+  const re = /\nOPENCLAW_VERSION = "([^\n"]+)"\n/;
+  if (!re.test(config)) throw new Error("Could not find OPENCLAW_VERSION in railway.toml");
+  return config.replace(re, `\nOPENCLAW_VERSION = "${next}"\n`);
 }
 
 const latest = await gh(`/repos/${owner}/${repo}/releases/latest`);
 const latestTag = latest.tag_name;
 if (!latestTag) throw new Error("No tag_name in latest release response");
 
-const dockerPath = "Dockerfile";
-const docker = fs.readFileSync(dockerPath, "utf8");
-const currentTag = readCurrentTag(docker);
-if (!currentTag) throw new Error("Could not parse current OPENCLAW_GIT_REF");
+const configPath = "railway.toml";
+const config = fs.readFileSync(configPath, "utf8");
+const currentTag = readCurrentTag(config);
+if (!currentTag) throw new Error("Could not parse current OPENCLAW_VERSION from railway.toml");
 
 console.log(`current=${currentTag} latest=${latestTag}`);
 
@@ -50,5 +50,5 @@ if (currentTag === latestTag) {
   process.exit(0);
 }
 
-fs.writeFileSync(dockerPath, replaceTag(docker, latestTag));
-console.log(`Updated ${dockerPath} to ${latestTag}`);
+fs.writeFileSync(configPath, replaceTag(config, latestTag));
+console.log(`Updated ${configPath} to ${latestTag}`);

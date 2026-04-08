@@ -1,4 +1,4 @@
-name: Bump OpenClaw release ref
+name: Bump OpenClaw version
 
 on:
   schedule:
@@ -21,8 +21,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Bump Dockerfile OPENCLAW_GIT_REF if needed
-        run: node scripts/bump-openclaw-ref.mjs
+      - name: Bump railway.toml OPENCLAW_VERSION if needed
+        run: node scripts/bump-openclaw-version.mjs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -30,13 +30,13 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: bump OPENCLAW_GIT_REF to latest release"
-          title: "chore: bump OPENCLAW_GIT_REF to latest OpenClaw release"
+          commit-message: "chore: bump OPENCLAW_VERSION to latest release"
+          title: "chore: bump OPENCLAW_VERSION to latest OpenClaw release"
           body: |
-            Automated update of the default OpenClaw build ref (`OPENCLAW_GIT_REF`) to the latest upstream release tag.
+            Automated update of the Railway template variable (`OPENCLAW_VERSION`) to the latest upstream release tag.
 
-            This keeps the Railway template stable-by-default while staying current.
-          branch: chore/bump-openclaw-ref
+            This keeps Railway as the single source of truth for the OpenClaw version.
+          branch: chore/bump-openclaw-version
           delete-branch: true
           labels: |
             automated

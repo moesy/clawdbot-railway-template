@@ -36,7 +36,7 @@ Optional:
 - `OPENCLAW_GATEWAY_TOKEN` — if not set, the wrapper generates one (not ideal). In a template, set it using a generated secret.
 
 Notes:
-- This template pins OpenClaw to a released version by default via Docker build arg `OPENCLAW_GIT_REF` (override if you want `main`).
+- Set `OPENCLAW_VERSION` in Railway Variables. The Docker build requires it and uses it as the single source of truth for which OpenClaw version/ref to build.
 
 4) Enable **Public Networking** (HTTP). Railway will assign a domain.
    - This service listens on Railway’s injected `PORT` at runtime (recommended).
@@ -160,7 +160,9 @@ Recommendations:
 ## Local smoke test
 
 ```bash
-docker build -t clawdbot-railway-template .
+docker build \
+  --build-arg OPENCLAW_VERSION=v2026.4.5 \
+  -t clawdbot-railway-template .
 
 docker run --rm -p 8080:8080 \
   -e PORT=8080 \
