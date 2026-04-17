@@ -13,6 +13,6 @@ requiredMountPath = "/data"
 # NOTE: Railway injects PORT automatically.
 # Do not set PORT here; Railway templates may not apply it reliably and hardcoding
 # can cause domain routing mismatches.
-OPENCLAW_VERSION = "v2026.4.5"
+OPENCLAW_VERSION = "v2026.4.15"
 OPENCLAW_STATE_DIR = "/data/.openclaw"
 OPENCLAW_WORKSPACE_DIR = "/data/workspace"
