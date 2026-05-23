@@ -27,6 +27,29 @@ RUN test -n "${OPENCLAW_VERSION}"
 ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
 RUN git clone --depth 1 --branch "${OPENCLAW_VERSION}" https://github.com/openclaw/openclaw.git .
 
+# pnpm 11 can fail on registry entries missing publish-time metadata when
+# OpenClaw's workspace minimumReleaseAge policy is active. This source-build
+# wrapper relaxes that policy during image build only.
+RUN python3 - <<'PY'
+from pathlib import Path
+p=Path('pnpm-workspace.yaml')
+lines=p.read_text().splitlines()
+out=[]
+skip=False
+for line in lines:
+    if skip:
+        if line.startswith('  - '):
+            continue
+        skip=False
+    if line.startswith('minimumReleaseAge:'):
+        continue
+    if line.startswith('minimumReleaseAgeExclude:'):
+        skip=True
+        continue
+    out.append(line)
+p.write_text("\n".join(out)+"\n")
+PY
+
 # Patch: relax version requirements for packages that may reference unpublished versions.
 # Apply to all extension package.json files to handle workspace protocol (workspace:*).
 RUN set -eux; \
@@ -35,7 +58,9 @@ RUN set -eux; \
     sed -i -E 's/"openclaw"[[:space:]]*:[[:space:]]*"workspace:[^"]+"/"openclaw": "*"/g' "$f"; \
   done
 
-RUN pnpm install --no-frozen-lockfile
+RUN corepack prepare "$(node -p "require('./package.json').packageManager")" --activate \
+  && pnpm --version \
+  && pnpm install --no-frozen-lockfile
 RUN pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:install && pnpm ui:build
